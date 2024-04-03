@@ -1,79 +1,145 @@
-"use client";
+'use client';
 
-import axios from "axios";
+import { Box } from '@mui/material';
+import React, { useEffect, useState } from 'react';
 import Link from "next/link";
-import React, { useEffect } from "react";
-import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import validator from 'validator';
 
-const SignupPage = () => {
+import Button from '../components/button/button';
+import Input from '../components/search-bar/search-bar';
+import Toast from '../components/toast/toast';
+
+import { useSelector, useDispatch } from '@/redux/store';
+import { SetState, UserRegistration } from '../../redux/slices/auth-slice';
+
+import { SignUpWrapper } from './style';
+
+const SignUp: React.FC = () => {
   const router = useRouter();
+  const dispatch = useDispatch();
 
-  const [ user, setUser ] = React.useState({
-    email: "",
-    password: "",
-    username: "",
-  });
-  const [ buttonDisabled, setButtonDisabled ] = React.useState(false);
-  const [ loading, setLoading ] = React.useState(false);
+  const {
+    err,
+    message
+  } = useSelector((state: any) => state.auth);
 
-  const onSignup = async () => {
-    try {
-      setLoading(true);
-      await axios.post("/api/auth/sign-up", user);
-      router.push("/login");
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
+  const [ email, setEmail ] = useState<string>('');
+  const [ username, setUserName ] = useState<string>('');
+  const [ password, setPassword ] = useState<string>('');
+  const [ signupError, setSignupError ] = useState<string>('');
+  const [ isToastOpen, setIsToastOpen ] = useState<boolean>(false);
+  const [ toastMessage, setToastMessage ] = useState<string>('');
+  const [ severity, setSeverity ] = useState<string>('');
+
+  const passwordPattern = /^(?=.*[A-Z])(?=.*\d)(?=.*[@#$!%*?_&])[A-Za-z\d@#$!%*?_&]{8,30}$/;
+
+  const handleToastClose = () => {
+    setIsToastOpen(false);
   };
 
   useEffect(() => {
-    if (user.email.length > 0 && user.password.length > 0 && user.username.length > 0) {
-      setButtonDisabled(false);
-    } else {
-      setButtonDisabled(true);
+    setSignupError('');
+    if (err) {
+      setToastMessage(err);
+      setSeverity('error');
+      setIsToastOpen(true);
+
+      dispatch(SetState({
+        field: 'err',
+        value: ''
+      }));
+    } else if (message) {
+      dispatch(SetState({
+        field: 'message',
+        value: ''
+      }));
+      router.push("/login");
     }
-  }, [ user ]);
+  }, [ err, message ]);
+
+  const handleSignup = async () => {
+    if (!email.trim() || !password || !username.trim()) {
+      setSignupError('Please fill all fields first');
+      return;
+    }
+
+    if (!validator.isEmail(email)) {
+      setSignupError('Invalid email address');
+      return;
+    }
+
+    if (!passwordPattern.test(password)) {
+      setSignupError('Password should be at least 8 characters long and contain at least one lowercase letter, one uppercase letter, one numeric digit, and one special character');
+      return;
+    }
+
+    dispatch(UserRegistration({
+      username,
+      email,
+      password
+    }));
+  };
+
+  const linkStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1>{loading ? "Processing" : "Signup"}</h1>
-      <hr />
-      <label htmlFor="username">username</label>
-      <input
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"
-        id="username"
-        type="text"
-        value={user.username}
-        onChange={(e) => setUser({ ...user, username: e.target.value })}
-        placeholder="username"
+    <SignUpWrapper>
+      <div className="Sign-wrapper">
+        <div className="header">
+          <p>Facebook</p>
+        </div>
+        <div className="sign-overlay-wrapper">
+          <p>Sign Up</p>
+          <div className="text-field">
+            <Input
+              placeholder="Enter Your Full Name"
+              label="Name"
+              type="text"
+              value={username}
+              onChange={(e) => setUserName(e.target.value)}
+            />
+            <Input
+              placeholder="Enter Your Email"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Box sx={{ height: 150 }}>
+              <Input
+                placeholder="Enter Your Password"
+                label="Password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              {signupError ? <div className='show-error'>{signupError}</div> : null}
+            </Box>
+          </div>
+          <div className="buttons-wrapper register-button-wrapper">
+            <Button text="Sign Up" onClick={handleSignup} variant="contained" />
+          </div>
+          <div className="auth-fotter-wrapper">
+            <p>
+              Already a Member?
+            </p>
+            <Link href="/login" style={linkStyle}>Visit login page</Link>
+          </div>
+        </div>
+      </div>
+      <Toast
+        toastOpen={isToastOpen}
+        message={toastMessage}
+        severity={severity}
+        handleToastClose={handleToastClose}
       />
-      <label htmlFor="email">email</label>
-      <input
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"
-        id="email"
-        type="text"
-        value={user.email}
-        onChange={(e) => setUser({ ...user, email: e.target.value })}
-        placeholder="email"
-      />
-      <label htmlFor="password">password</label>
-      <input
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"
-        id="password"
-        type="password"
-        value={user.password}
-        onChange={(e) => setUser({ ...user, password: e.target.value })}
-        placeholder="password"
-      />
-      <button
-        onClick={onSignup}
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600">{buttonDisabled ? "No signup" : "Signup"}</button>
-      <Link href="/login">Visit login page</Link>
-    </div>
+    </SignUpWrapper>
   );
 };
 
-export default SignupPage;
+export default SignUp;

@@ -1,70 +1,118 @@
-"use client";
+'use client';
 
-import axios from "axios";
+import React, { useEffect, useState } from 'react';
 import Link from "next/link";
-import React, { useEffect } from "react";
-import { toast } from "react-hot-toast";
-import { useRouter } from "next/navigation";
+import validator from 'validator';
 
-const LoginPage = () => {
-  const router = useRouter();
+import Button from '../components/button/button';
+import Input from '../components/search-bar/search-bar';
+import Toast from '../components/toast/toast';
 
-  const [ user, setUser ] = React.useState({
-    email: "",
-    password: "",
-  });
-  const [ buttonDisabled, setButtonDisabled ] = React.useState(false);
-  const [ loading, setLoading ] = React.useState(false);
+import { useSelector, useDispatch } from '@/redux/store';
+import { SetState, SignIn as login } from '../../redux/slices/auth-slice';
 
-  const onLogin = async () => {
-    try {
-      setLoading(true);
-      await axios.post("/api/auth/sign-in", user);
-      toast.success("Login success");
-      router.push("/dashboard");
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+import { SignInWrapper } from './style';
+
+const SignIn: React.FC = () => {
+  const dispatch = useDispatch();
+
+  const { err } = useSelector((state) => state.auth);
+
+  const [ email, setEmail ] = useState('');
+  const [ password, setPassword ] = useState('');
+  const [ isToastOpen, setIsToastOpen ] = useState(false);
+  const [ toastMessage, setToastMessage ] = useState('');
+  const [ severity, setSeverity ] = useState('');
+  const [ signinError, setSigninError ] = useState('');
 
   useEffect(() => {
-    if (user.email.length > 0 && user.password.length > 0) {
-      setButtonDisabled(false);
-    } else {
-      setButtonDisabled(true);
+    setSigninError('');
+    if (err) {
+      setToastMessage('Invalid Email or Password');
+      setSeverity('error');
+      setIsToastOpen(true);
+
+      dispatch(SetState({
+        field: 'err',
+        value: ''
+      }));
     }
-  }, [ user ]);
+  }, [ err ]);
+
+  const handleToastClose = () => {
+    setIsToastOpen(false);
+  };
+
+  const handleSignIn = async () => {
+    if (!email.trim() || !password) {
+      setSigninError('Please fill all fields first');
+      return;
+    }
+
+    if (!validator.isEmail(email)) {
+      setSigninError('Invalid email address');
+      return;
+    }
+
+    dispatch(login({
+      email,
+      password
+    }));
+  };
+
+  const linkStyle = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen py-2">
-      <h1>{loading ? "Processing" : "Login"}</h1>
-      <hr />
-      <label htmlFor="email">email</label>
-      <input
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"
-        id="email"
-        type="text"
-        value={user.email}
-        onChange={(e) => setUser({ ...user, email: e.target.value })}
-        placeholder="email"
+    <SignInWrapper>
+      <div className="Sign-wrapper">
+        <div className="header">
+          <p>Facebook</p>
+        </div>
+        <div className="sign-overlay-wrapper">
+          <p>Sign In</p>
+          <div className="text-field">
+            <Input
+              placeholder="Enter Your Email"
+              label="Email"
+              value={email}
+              type="email"
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <Input
+              placeholder="Enter Your Password"
+              label="Password"
+              value={password}
+              type="password"
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          <div className={`forget-password ${signinError ? 'error-vissible' : null}`}>
+            {signinError ? <div className='show-error'>{signinError}</div> : null}
+            <Link href="/forgot-password">Forget Password</Link>
+          </div>
+
+          <div className="buttons-wrapper">
+            <Button text="Sign In"
+              onClick={handleSignIn}
+              variant="contained"
+            ></Button>
+          </div>
+          <div className='auth-fotter-wrapper'> <p>Dont have an Account ? </p>
+            <Link href="/signup" style={linkStyle}>Sign Up</Link></div>
+        </div>
+      </div>
+      <Toast
+        toastOpen={isToastOpen}
+        message={toastMessage}
+        severity={severity}
+        handleToastClose={handleToastClose}
       />
-      <label htmlFor="password">password</label>
-      <input
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600 text-black"
-        id="password"
-        type="password"
-        value={user.password}
-        onChange={(e) => setUser({ ...user, password: e.target.value })}
-        placeholder="password"
-      />
-      <button
-        onClick={onLogin}
-        className="p-2 border border-gray-300 rounded-lg mb-4 focus:outline-none focus:border-gray-600">Login here</button>
-      <Link href="/signup">Visit Signup page</Link>
-    </div>
+    </SignInWrapper>
   );
 };
 
-export default LoginPage;
+export default SignIn;
