@@ -1,10 +1,11 @@
 import React from 'react';
-import MuiAlert, { AlertProps } from '@mui/material/Alert';
+import MuiAlert, { AlertColor, AlertProps } from '@mui/material/Alert';
 import Snackbar from '@mui/material/Snackbar';
 
 interface ToastProps {
   message?: string;
-  severity?: AlertProps['severity'];
+  // severity?: AlertProps['severity'];
+  severity?: AlertColor | string;
   toastOpen: boolean;
   className?: string;
   handleToastClose: () => void;
@@ -12,7 +13,7 @@ interface ToastProps {
 
 const Toast: React.FC<ToastProps> = ({
   message = '',
-  severity = 'success',
+  severity = '',
   toastOpen = false,
   className = '',
   handleToastClose,
@@ -31,7 +32,7 @@ const Toast: React.FC<ToastProps> = ({
     >
       <Alert
         onClose={handleToastClose}
-        severity={severity}
+        severity={severity as AlertColor}
       >
         {message}
       </Alert>

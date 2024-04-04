@@ -32,7 +32,7 @@ const SendEmail = ({
     from: 'ahsnkhalid1027@gmail.com',
     to: email,
     subject: 'Reset Password Email Confirmation',
-    html: `Click <a href="${APP_URL}/auth/${page}?token=${unique}">here</a> to verify your account.`
+    html: `Click <a href="${APP_URL}/${page}?token=${unique}">here</a> to verify your account.`
   };
 
   transport.sendMail(mailOptions, (error) => {
